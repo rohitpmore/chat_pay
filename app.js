@@ -279,13 +279,13 @@ function receivedMessage(event) {
     greetingKeywords.forEach(function(greet){
       if(greet == value){
          sendTextMessage(senderID, "Hi, welcome to the Iron Bank of Bravos!");
-         break;
+         return;
       }
     });
      paymentsKeywords.forEach(function(transact){
       if(transact == value){
          sendTextMessage(senderID, "You said: " + transact);
-         break;
+         return;
       }
     });
     console.log(value);
