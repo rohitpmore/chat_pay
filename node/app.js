@@ -16,13 +16,14 @@ const
   crypto = require('crypto'),
   express = require('express'),
   https = require('https'),  
-  request = require('request');
+  request = require('request'),
+  keyword_extractor = require('keyword-extractor');
 
 var app = express();
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
-//app.use(bodyParser.json({ verify: verifyRequestSignature }));
-app.use(bodyParser.json({}));
+app.use(bodyParser.json({ verify: verifyRequestSignature }));
+//app.use(bodyParser.json({}));
 app.use(express.static('public'));
 
 /*
@@ -84,6 +85,15 @@ app.get('/webhook', function(req, res) {
 app.post('/webhook', function (req, res) {
   var data = req.body;
   console.log("hey..", req.body);
+  var testText ="Hey please transfer 1000 rs. to shanky?";
+  var extract_result =  keyword_extractor.extract(testText,{
+                                                                language:"english",
+                                                                return_changed_case:true,
+                                                                remove_duplicates: false
+ 
+                                                           });
+  console.log("The keywords are: ", extract_result);
+
   // Make sure this is a page subscription
   if (data.object == 'page') {
     // Iterate over each entry
@@ -222,6 +232,8 @@ function receivedMessage(event) {
   var recipientID = event.recipient.id;
   var timeOfMessage = event.timestamp;
   var message = event.message;
+  var greetingKeywords = ['hi', 'hey', 'hello'];
+  var paymentsKeywords = ['pay', 'payment','transfer','send'];
 
   console.log("Received message for user %d and page %d at %d with message:", 
     senderID, recipientID, timeOfMessage);
@@ -251,67 +263,94 @@ function receivedMessage(event) {
     return;
   }
 
-  if (messageText) {
 
+  if (messageText) {
+  var testText = "Hi please transfer 1000 rupees to Shanky";
+  var extract_result =  keyword_extractor.extract(messageText,{
+                                                                language:"english",
+                                                                remove_digits: true,
+                                                                return_changed_case:true,
+                                                                remove_duplicates: false
+ 
+                                                           });
+  console.log("The keywords are: ", extract_result);
+  
+  extract_result.forEach(function(value){
+    greetingKeywords.forEach(function(greet){
+      if(greet == value){
+         sendTextMessage(senderID, "Hi, welcome to the Iron Bank of Bravos!");
+         break;
+      }
+    });
+     paymentsKeywords.forEach(function(transact){
+      if(transact == value){
+         sendTextMessage(senderID, "You said: " + transact);
+         break;
+      }
+    });
+    console.log(value);
+  });
+
+    sendTextMessage(senderID, messageText);
     // If we receive a text message, check to see if it matches any special
     // keywords and send back the corresponding example. Otherwise, just echo
     // the text we received.
-    switch (messageText) {
-      case 'image':
-        sendImageMessage(senderID);
-        break;
+    // switch (messageText) {
+    //   case 'image':
+    //     sendImageMessage(senderID);
+    //     break;
 
-      case 'gif':
-        sendGifMessage(senderID);
-        break;
+    //   case 'gif':
+    //     sendGifMessage(senderID);
+    //     break;
 
-      case 'audio':
-        sendAudioMessage(senderID);
-        break;
+    //   case 'audio':
+    //     sendAudioMessage(senderID);
+    //     break;
 
-      case 'video':
-        sendVideoMessage(senderID);
-        break;
+    //   case 'video':
+    //     sendVideoMessage(senderID);
+    //     break;
 
-      case 'file':
-        sendFileMessage(senderID);
-        break;
+    //   case 'file':
+    //     sendFileMessage(senderID);
+    //     break;
 
-      case 'button':
-        sendButtonMessage(senderID);
-        break;
+    //   case 'button':
+    //     sendButtonMessage(senderID);
+    //     break;
 
-      case 'generic':
-        sendGenericMessage(senderID);
-        break;
+    //   case 'generic':
+    //     sendGenericMessage(senderID);
+    //     break;
 
-      case 'receipt':
-        sendReceiptMessage(senderID);
-        break;
+    //   case 'receipt':
+    //     sendReceiptMessage(senderID);
+    //     break;
 
-      case 'quick reply':
-        sendQuickReply(senderID);
-        break;        
+    //   case 'quick reply':
+    //     sendQuickReply(senderID);
+    //     break;        
 
-      case 'read receipt':
-        sendReadReceipt(senderID);
-        break;        
+    //   case 'read receipt':
+    //     sendReadReceipt(senderID);
+    //     break;        
 
-      case 'typing on':
-        sendTypingOn(senderID);
-        break;        
+    //   case 'typing on':
+    //     sendTypingOn(senderID);
+    //     break;        
 
-      case 'typing off':
-        sendTypingOff(senderID);
-        break;        
+    //   case 'typing off':
+    //     sendTypingOff(senderID);
+    //     break;        
 
-      case 'account linking':
-        sendAccountLinking(senderID);
-        break;
+    //   case 'account linking':
+    //     sendAccountLinking(senderID);
+    //     break;
 
-      default:
-        sendTextMessage(senderID, messageText);
-    }
+    //   default:
+    //     sendTextMessage(senderID, messageText);
+    // }
   } else if (messageAttachments) {
     sendTextMessage(senderID, "Message with attachment received");
   }
