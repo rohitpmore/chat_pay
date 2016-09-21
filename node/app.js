@@ -21,7 +21,8 @@ const
 var app = express();
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
-app.use(bodyParser.json({ verify: verifyRequestSignature }));
+//app.use(bodyParser.json({ verify: verifyRequestSignature }));
+app.use(bodyParser.json({}));
 app.use(express.static('public'));
 
 /*
@@ -82,7 +83,7 @@ app.get('/webhook', function(req, res) {
  */
 app.post('/webhook', function (req, res) {
   var data = req.body;
-
+  console.log("hey..", req.body);
   // Make sure this is a page subscription
   if (data.object == 'page') {
     // Iterate over each entry
@@ -151,6 +152,7 @@ app.get('/authorize', function(req, res) {
  *
  */
 function verifyRequestSignature(req, res, buf) {
+  console.log("The request is: ", req.body);
   var signature = req.headers["x-hub-signature"];
 
   if (!signature) {
