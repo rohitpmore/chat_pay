@@ -279,13 +279,13 @@ function receivedMessage(event) {
     greetingKeywords.forEach(function(greet){
       if(greet == value){
          sendTextMessage(senderID, "Hi, welcome to the Iron Bank of Bravos!");
-         break;
+         //break;
       }
     });
      paymentsKeywords.forEach(function(transact){
       if(transact == value){
          sendTextMessage(senderID, "You said: " + transact);
-         break;
+         //break;
       }
     });
     console.log(value);
@@ -868,6 +868,193 @@ function callSendAPI(messageData) {
     }
   });  
 }
+
+function callReverseFundTransferAPI(currentUser, recipient, amount) {
+  var visaAPIClient = new VisaAPIClient();
+  var strDate = new Date().toISOString().replace(/\..+/, '');
+  var pullFundTransfer = JSON.stringify({
+      "acquirerCountryCode": "608",
+      "acquiringBin": "408999",
+      "amount": amount,
+      "cardAcceptor": {
+        "address": {
+          "country": "USA",
+          "county": "San Mateo",
+          "state": "CA",
+          "zipCode": "94404"
+        },
+        "idCode": "VMT200911026070",
+        "name": currentUser,
+        "terminalId": "365539"
+      },
+      "localTransactionDateTime": "2016-09-21T12:05:14",
+      "originalDataElements": {
+        "acquiringBin": "408999",
+        "approvalCode": "20304B",
+        "systemsTraceAuditNumber": "897825",
+        "transmissionDateTime": "2016-09-21T12:05:14"
+      },
+      "pointOfServiceCapability": {
+        "posTerminalEntryCapability": "2",
+        "posTerminalType": "4"
+      },
+      "pointOfServiceData": {
+        "motoECIIndicator": "0",
+        "panEntryMode": "90",
+        "posConditionCode": "00"
+      },
+      "retrievalReferenceNumber": "330000550000",
+      "senderCardExpiryDate": "2015-10",
+      "senderCurrencyCode": "USD",
+      "senderPrimaryAccountNumber": "4895100000055127",
+      "systemsTraceAuditNumber": "451050",
+      "transactionIdentifier": "381228649430011"
+  });
+
+  this.timeout(10000);
+    var baseUri = 'visadirect/';
+    var resourcePath = 'fundstransfer/v1/reversefundstransactions';
+    visaAPIClient.doMutualAuthRequest(baseUri + resourcePath, pushFundsRequest, 'POST', {}, 
+    function(err, responseCode) {
+
+        var messageData = {
+          recipient: {
+            id: recipientId
+          },
+          message: {
+            text: "Try Again",
+            metadata: "DEVELOPER_DEFINED_METADATA"
+          }
+        };
+        callSendAPI(messageData);
+      done();
+    });
+}
+
+function callPullFundTransferAPI(currentUser, recipient, amount) {
+  var visaAPIClient = new VisaAPIClient();
+  var strDate = new Date().toISOString().replace(/\..+/, '');
+  var pullFundTransfer = JSON.stringify({
+      "acquirerCountryCode": "840",
+      "acquiringBin": "408999",
+      "amount": amount,
+      "businessApplicationId": "AA",
+      "cardAcceptor": {
+        "address": {
+          "country": "USA",
+          "county": "San Mateo",
+          "state": "CA",
+          "zipCode": "94404"
+        },
+        "idCode": "ABCD1234ABCD123",
+        "name": currentUser,
+        "terminalId": "ABCD1234"
+      },
+      "cavv": "0700100038238906000013405823891061668252",
+      "foreignExchangeFeeTransaction": "11.99",
+      "localTransactionDateTime": "2016-09-21T10:00:57",
+      "retrievalReferenceNumber": "330000550000",
+      "senderCardExpiryDate": "2015-10",
+      "senderCurrencyCode": "USD",
+      "senderPrimaryAccountNumber": "4895142232120006",
+      "surcharge": "11.99",
+      "systemsTraceAuditNumber": "451001"
+  });
+
+  this.timeout(10000);
+    var baseUri = 'visadirect/';
+    var resourcePath = 'fundstransfer/v1/pullfundstransactions';
+    visaAPIClient.doMutualAuthRequest(baseUri + resourcePath, pushFundsRequest, 'POST', {}, 
+    function(err, responseCode) {
+
+      if(!err){
+        callPostFundTransferAPI(currentUser,recipient,amount);
+      } else {
+        var messageData = {
+          recipient: {
+            id: recipientId
+          },
+          message: {
+            text: "Try Again",
+            metadata: "DEVELOPER_DEFINED_METADATA"
+          }
+        };
+        callSendAPI(messageData);
+      }
+      done();
+    });
+}
+
+function callPostFundTransferAPI(currentUser, recipient , amount ) {
+  var visaAPIClient = new VisaAPIClient();
+  var strDate = new Date().toISOString().replace(/\..+/, '');
+  var pushFundsRequest = JSON.stringify({
+      "systemsTraceAuditNumber": 350420,
+      "retrievalReferenceNumber": "401010350420",
+      "localTransactionDateTime": strDate,
+      "acquiringBin": 409999,
+      "acquirerCountryCode": "101",
+      "senderAccountNumber": "1234567890123456",
+      "senderCountryCode": "USA",
+      "transactionCurrencyCode": "USD",
+      "senderName": currentUser,
+      "senderAddress": "Mahadevpura",
+      "senderCity": "Bangalore",
+      "senderStateCode": "IN",
+      "recipientName": recipient,
+      "recipientPrimaryAccountNumber": "4957030420210454",
+      "amount": amount,
+      "businessApplicationId": "AA",
+      "transactionIdentifier": 234234322342343,
+      "merchantCategoryCode": 6012,
+      "sourceOfFundsCode": "03",
+      "cardAcceptor": {
+        "name": currentUser,
+        "terminalId": "13655392",
+        "idCode": "VMT200911026070",
+        "address": {
+          "state": "CA",
+          "county": "081",
+          "country": "USA",
+          "zipCode": "94105"
+        }
+      },
+      "feeProgramIndicator": "123"
+    });
+
+    this.timeout(10000);
+    var baseUri = 'visadirect/';
+    var resourcePath = 'fundstransfer/v1/pushfundstransactions';
+    visaAPIClient.doMutualAuthRequest(baseUri + resourcePath, pushFundsRequest, 'POST', {}, 
+    function(err, responseCode) {
+
+      if(!err){
+        var messageData = {
+          recipient: {
+            id: recipientId
+          },
+          message: {
+            text: amount + "tranferred to " + recipient,
+            metadata: "DEVELOPER_DEFINED_METADATA"
+          }
+        };
+        callSendAPI(messageData);  
+      } else {
+        var messageData = {
+          recipient: {
+            id: recipientId
+          },
+          message: {
+            text: "Try Again",
+            metadata: "DEVELOPER_DEFINED_METADATA"
+          }
+        };
+        callSendAPI(messageData);
+      }
+      done();
+    });
+}
+
 
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
