@@ -62,6 +62,7 @@ if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
  *
  */
 app.get('/webhook', function(req, res) {
+  console.log("The request is: ",req.query);
   console.log("Mode: ",req.query['hub.mode']);
   console.log("hubtoken: ",req.query['hub.verify_token']);
   console.log("token: ",VALIDATION_TOKEN);
