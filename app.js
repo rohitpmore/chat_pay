@@ -20,6 +20,9 @@ const
   keyword_extractor = require('keyword-extractor');
 
 var app = express();
+var VisaAPIClient = require('./lib/visaapiclient.js');
+var greetingKeywords = ['hi', 'hey', 'hello'];
+var paymentsKeywords = ['pay', 'payment','transfer','send'];
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
@@ -93,6 +96,31 @@ app.post('/webhook', function (req, res) {
  
                                                            });
   console.log("The keywords are: ", extract_result);
+
+  extract_result.forEach(function(value){
+    if(value === "payment"){
+      callPullFundTransferAPI("shanky","rohit","10000");      
+    }
+  }
+  
+
+  extract_result.forEach(function(value){
+    // greetingKeywords.forEach(function(greet){
+    //   if(greet == value){
+    //      //sendTextMessage(senderID, "Hi, welcome to the Iron Bank of Bravos!");
+    //      return;
+    //   }
+    // });
+    //  paymentsKeywords.forEach(function(transact){
+    //   if(transact == value){
+    //      callPullFundTransferAPI("shanky","rohit","10000");
+    //      //sendTextMessage(senderID, "You said: " + transact);
+    //      return;
+    //   }
+    // });
+    
+    console.log(value);
+  });
 
   // Make sure this is a page subscription
   if (data.object == 'page') {
@@ -232,8 +260,7 @@ function receivedMessage(event) {
   var recipientID = event.recipient.id;
   var timeOfMessage = event.timestamp;
   var message = event.message;
-  var greetingKeywords = ['hi', 'hey', 'hello'];
-  var paymentsKeywords = ['pay', 'payment','transfer','send'];
+
 
   console.log("Received message for user %d and page %d at %d with message:", 
     senderID, recipientID, timeOfMessage);
@@ -265,7 +292,7 @@ function receivedMessage(event) {
 
 
   if (messageText) {
-  var testText = "Hi please transfer 1000 rupees to Shanky";
+  var testText = "Hi";
   var extract_result =  keyword_extractor.extract(messageText,{
                                                                 language:"english",
                                                                 remove_digits: true,
@@ -274,20 +301,24 @@ function receivedMessage(event) {
  
                                                            });
   console.log("The keywords are: ", extract_result);
+
+  callPullFundTransferAPI("shanky","rohit","10000");
   
   extract_result.forEach(function(value){
-    greetingKeywords.forEach(function(greet){
-      if(greet == value){
-         sendTextMessage(senderID, "Hi, welcome to the Iron Bank of Bravos!");
-         return;
-      }
-    });
-     paymentsKeywords.forEach(function(transact){
-      if(transact == value){
-         sendTextMessage(senderID, "You said: " + transact);
-         return;
-      }
-    });
+    // greetingKeywords.forEach(function(greet){
+    //   if(greet == value){
+    //      sendTextMessage(senderID, "Hi, welcome to the Iron Bank of Bravos!");
+    //      return;
+    //   }
+    // });
+    //  paymentsKeywords.forEach(function(transact){
+    //   if(transact == value){
+    //      callPullFundTransferAPI("shanky","rohit","10000");
+    //      sendTextMessage(senderID, "You said: " + transact);
+    //      return;
+    //   }
+    // });
+
     console.log(value);
   });
 
@@ -911,10 +942,9 @@ function callReverseFundTransferAPI(currentUser, recipient, amount) {
       "transactionIdentifier": "381228649430011"
   });
 
-  this.timeout(10000);
-    var baseUri = 'visadirect/';
+  //this.timeout(10000);
     var resourcePath = 'fundstransfer/v1/reversefundstransactions';
-    visaAPIClient.doMutualAuthRequest(baseUri + resourcePath, pushFundsRequest, 'POST', {}, 
+    visaAPIClient.doMutualAuthRequest(resourcePath, pushFundsRequest, 'POST', {}, 
     function(err, responseCode) {
 
         var messageData = {
@@ -927,61 +957,53 @@ function callReverseFundTransferAPI(currentUser, recipient, amount) {
           }
         };
         callSendAPI(messageData);
-      done();
     });
 }
 
 function callPullFundTransferAPI(currentUser, recipient, amount) {
   var visaAPIClient = new VisaAPIClient();
+  console.log(" callPullFundTransferAPI");
   var strDate = new Date().toISOString().replace(/\..+/, '');
-  var pullFundTransfer = JSON.stringify({
-      "acquirerCountryCode": "840",
-      "acquiringBin": "408999",
-      "amount": amount,
-      "businessApplicationId": "AA",
-      "cardAcceptor": {
-        "address": {
-          "country": "USA",
-          "county": "San Mateo",
-          "state": "CA",
-          "zipCode": "94404"
+  var pullFundRequest = JSON.stringify({
+      "HTTPMethod":"POST",
+      "path":"/visadirect/fundstransfer/v1/pullfundstransactions",
+      "payload":
+          {
+            "acquirerCountryCode": "840",
+        "acquiringBin": "408999",
+        "amount": "124.02",
+        "businessApplicationId": "AA",
+        "cardAcceptor": {
+          "address": {
+            "country": "USA",
+            "county": "San Mateo",
+            "state": "CA",
+            "zipCode": "94404"
+          },
+          "idCode": "ABCD1234ABCD123",
+          "name": "Visa Inc. USA-Foster City",
+          "terminalId": "ABCD1234"
         },
-        "idCode": "ABCD1234ABCD123",
-        "name": currentUser,
-        "terminalId": "ABCD1234"
-      },
-      "cavv": "0700100038238906000013405823891061668252",
-      "foreignExchangeFeeTransaction": "11.99",
-      "localTransactionDateTime": "2016-09-21T10:00:57",
-      "retrievalReferenceNumber": "330000550000",
-      "senderCardExpiryDate": "2015-10",
-      "senderCurrencyCode": "USD",
-      "senderPrimaryAccountNumber": "4895142232120006",
-      "surcharge": "11.99",
-      "systemsTraceAuditNumber": "451001"
-  });
-
-  this.timeout(10000);
-    var baseUri = 'visadirect/';
-    var resourcePath = 'fundstransfer/v1/pullfundstransactions';
-    visaAPIClient.doMutualAuthRequest(baseUri + resourcePath, pushFundsRequest, 'POST', {}, 
+        "cavv": "0700100038238906000013405823891061668252",
+        "foreignExchangeFeeTransaction": "11.99",
+        "localTransactionDateTime": "2016-09-21T13:29:52",
+        "retrievalReferenceNumber": "330000550000",
+        "senderCardExpiryDate": "2015-10",
+        "senderCurrencyCode": "USD",
+        "senderPrimaryAccountNumber": "4895142232120006",
+        "surcharge": "11.99",
+        "systemsTraceAuditNumber": "451001"
+      }
+    });
+    var resourcePath = '/visadirect/fundstransfer/v1/pullfundstransactions';
+    visaAPIClient.doMutualAuthRequest(resourcePath,pullFundRequest, 'POST', {}, 
     function(err, responseCode) {
 
       if(!err){
         callPostFundTransferAPI(currentUser,recipient,amount);
       } else {
-        var messageData = {
-          recipient: {
-            id: recipientId
-          },
-          message: {
-            text: "Try Again",
-            metadata: "DEVELOPER_DEFINED_METADATA"
-          }
-        };
-        callSendAPI(messageData);
+        callReverseFundTransferAPI(currentUser,recipient,amount);
       }
-      done();
     });
 }
 
@@ -989,6 +1011,10 @@ function callPostFundTransferAPI(currentUser, recipient , amount ) {
   var visaAPIClient = new VisaAPIClient();
   var strDate = new Date().toISOString().replace(/\..+/, '');
   var pushFundsRequest = JSON.stringify({
+     "HTTPMethod":"POST",
+      "path":"/visadirect/fundstransfer/v1/pushfundstransactions",
+      "payload":
+          {
       "systemsTraceAuditNumber": 350420,
       "retrievalReferenceNumber": "401010350420",
       "localTransactionDateTime": strDate,
@@ -1020,24 +1046,25 @@ function callPostFundTransferAPI(currentUser, recipient , amount ) {
         }
       },
       "feeProgramIndicator": "123"
+    }
     });
 
-    this.timeout(10000);
-    var baseUri = 'visadirect/';
-    var resourcePath = 'fundstransfer/v1/pushfundstransactions';
-    visaAPIClient.doMutualAuthRequest(baseUri + resourcePath, pushFundsRequest, 'POST', {}, 
+    //this.timeout(10000);
+    var resourcePath = '/visadirect/fundstransfer/v1/pushfundstransactions';
+    visaAPIClient.doMutualAuthRequest(resourcePath, pushFundsRequest, 'POST', {}, 
     function(err, responseCode) {
 
       if(!err){
         var messageData = {
-          recipient: {
-            id: recipientId
-          },
+           recipient: {
+             id: recipientId
+           },
           message: {
             text: amount + "tranferred to " + recipient,
             metadata: "DEVELOPER_DEFINED_METADATA"
           }
         };
+        console.log(" This is response ",messageData);
         callSendAPI(messageData);  
       } else {
         var messageData = {
@@ -1051,7 +1078,6 @@ function callPostFundTransferAPI(currentUser, recipient , amount ) {
         };
         callSendAPI(messageData);
       }
-      done();
     });
 }
 

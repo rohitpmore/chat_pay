@@ -2,5 +2,8 @@
     "appSecret": "7bd3402804a490b781006509d084b7fd",
     "pageAccessToken": "EAACDyMoDZBNABABg9WFpKqAXm8HfKfpjs7P6MpMpBmBXXZAh3pvUiT8J8NaeYZCoLzJhSe5TZB8nnwrWiKnhIpIuXZCsu8ZBtqeJzMSqTbQIeAK9QZAEIyPQXBpQoeoBZBz2zFehokguio6c5xOquZASm85CyfZBxAmJXmJTXTnCpoPAZDZD",
     "validationToken": "pay_by_message",
-    "serverURL": "https://chatpay.herokuapp.com/"
+    "serverURL": "https://chatpay.herokuapp.com/",
+    "visaUrl": "https://companion-server.herokuapp.com/vdp/",
+    "userId": "R890PI943I98GVR19XD0211Uu9ZIQ8SCb3OaX6iyT7npewBBQ",
+    "password": "pUPLr0XDzy5g6YE9R441259vHP4"
 }
